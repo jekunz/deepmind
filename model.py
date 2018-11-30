@@ -14,6 +14,7 @@ class LMEntity(nn.Module):
         self.num_layers = num_layers
         self.batch_size = 1
         self.drop_layer = nn.Dropout(p=dropout)
+        
         #****************#
         # # # Layers # # # 
         # init word embedding layer
@@ -109,7 +110,7 @@ class LMEntity(nn.Module):
     def train_forward(self, x, entity_target):
         assert entity_target.item() <= self.h_e_m.size(0), f'entity index out of range: \nh_e_m.size(0): {self.h_e_m.size(0)}, entity_target: {entity_target.item()}'
             
-        # apply embeding
+        # apply embedding
         x = self.embedding_matrix(x.view(-1, 1))
         
         # forward RNN
@@ -154,7 +155,7 @@ class LMEntity(nn.Module):
         self.hidden = states
         hidden = states[0]
 
-        # create attention scores for for entities with hidden state
+        # create attention scores for entities with hidden state
         p_v, p_v_ = self.get_attn_scores(hidden)
         
         # weighted sum of entity states
@@ -168,7 +169,7 @@ class LMEntity(nn.Module):
             # get most probable entity
             v_i = p_v.argmax()
             if v_i != 0:
-                # Update exsisting entity in set of entities with current hidden state
+                # Update existing entity in set of entities with current hidden state
                 self.h_e_m = self.h_e_m.index_copy(0, v_i, hidden)
 
             else:
@@ -232,7 +233,7 @@ def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_in
                 
                 # entity loss
                 if e_target:
-                    # adding new entity not occurred before
+                    # add new entity that has not occurred before
                     if p_v.size(0) == e_target:
                         E_loss += F.cross_entropy(p_v.unsqueeze(0), zero_target)
                         count_E_correct += int(p_v.argmax() == 0)
@@ -242,7 +243,7 @@ def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_in
                         count_E_correct += int(p_v.argmax() == e_target)
                     count_E += 1
             
-            # add epoch loss and deviding loss values
+            # add epoch loss and divide loss values
             X_epoch_loss += X_loss.item()
             E_epoch_loss += E_loss.item()
             Z_epoch_loss += Z_loss.item()
