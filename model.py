@@ -219,7 +219,7 @@ def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_in
                 z_target = doc.Z[t+1]
                 # forward model
                 x_out, z_i, p_v = model.train_forward(doc.X[t], e_target)
-                # adding prediction stats for z
+                # add prediction stats for z
                 if z_i > 0.5:
                     if z_target:
                         z_true_positive  += 1
@@ -289,7 +289,7 @@ def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_in
         
         # if in train mode
         if optimizer:
-            # saving model
+            # save model
             file_name = str_pattern.format(model.__class__.__name__, model.lstm.hidden_size, epoch)
             save_model(model, file_name)
             # evaluate on evaluation corpus
