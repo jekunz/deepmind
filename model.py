@@ -14,9 +14,10 @@ class LMEntity(nn.Module):
         self.num_layers = num_layers
         self.batch_size = 1
         self.drop_layer = nn.Dropout(p=dropout)
+                
+            
+        # ***START LAYERS***
         
-        #****************#
-        # # # Layers # # # 
         # init word embedding layer
         self.embedding_matrix = nn.Embedding(vocab_size, embedding_size)
 
@@ -31,7 +32,6 @@ class LMEntity(nn.Module):
         self.W1 = nn.Linear(hidden_size, vocab_size)
         self.W2 = nn.Linear(hidden_size*2, hidden_size)
 
-
         # scoring matrix for attention part after stanford method
 
         # scoring layer for attention part
@@ -40,16 +40,20 @@ class LMEntity(nn.Module):
 
         # weights on matrix for calculating z_i
         self.z_weights = nn.Linear(hidden_size*2, 1)
-        # # # Layers END # # #
+        
+        # ***END LAYERS***
 
-        #********************#
-        # # # h_e states # # #
+        
+        # *** START h_e STATES***
+        
         # init h_e_0 state that indicates a new entity and is learnable parameter
         self.h_e_m = torch.Tensor().to(device)
         self.h_e_0 = nn.Parameter(torch.FloatTensor(num_layers, self.batch_size, hidden_size).to(device), requires_grad=True)
         # init set h_e which stores the entity states
-        # # # h_e states END # # #
+        
+        # ***END h_e STATES***
 
+        
         # init weights
         self.weight_init(init_range)
         
@@ -77,7 +81,6 @@ class LMEntity(nn.Module):
         # add new entity parameter
         self.h_e_m = torch.cat((self.h_e_m, self.h_e_0), dim=0)
 
-
     def weight_init(self, init_range):
         # initialize layer weights
         self.embedding_matrix.weight.data.uniform_(*init_range)
@@ -98,10 +101,9 @@ class LMEntity(nn.Module):
         self.W2.bias.data.fill_(0)
         self.W2.weight.data.uniform_(*init_range)
 
-
     def get_attn_scores(self, h):
         # generate (stanford) attention scores
-        # query:  h resp hidden state
+        # query:  h resp. hidden state
         # values: entity representations in set of entities
         p_v_ = torch.matmul(h , torch.t(self.drop_layer(self.W_score((self.h_e_m.view(-1, self.lstm.hidden_size))))))
         p_v = nn.functional.softmax(p_v_.view(-1), dim=0) # softmax for weighted sum
@@ -129,6 +131,7 @@ class LMEntity(nn.Module):
         z_i = torch.sigmoid(linear_z_i)
 
         # CASE 1: Next token is entity
+        
         if entity_target:
             if entity_target.item() < self.h_e_m.size(0):
                 # Update existing entity in set of entities with current hidden state
@@ -140,8 +143,8 @@ class LMEntity(nn.Module):
             # W1(tanh(W2([h_i−1 , h_e,vi ]))
             out = self.W1(torch.tanh(self.drop_layer( self.W2(torch.cat((hidden.squeeze(), self.h_e_m[entity_target].squeeze()), dim=0))) )).unsqueeze(0)
             
-
         # CASE 2: Next token is no entity
+        
         else:
             out = self.W1(hidden[0])
         out = out.contiguous()
@@ -183,7 +186,6 @@ class LMEntity(nn.Module):
             out = self.W1(hidden[0])
         out = out.contiguous()
         return out, z_i, p_v
-    
     
     
 def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_interval=25, str_pattern='{}_{}_epoch_{}.pkl', rz_amplifier=1):
@@ -250,7 +252,6 @@ def run_lme(model, corpus, optimizer=None, epochs=1, eval_corpus=None, status_in
             X_loss /= doc_num_tokens
             E_loss /= max(e_div, 1)
             Z_loss /= doc_num_tokens       
-            
             
             epoch_tokens += doc_num_tokens
             epoch_e_div += e_div
